@@ -1,0 +1,75 @@
+---
+imports:
+  - path: constants.py
+  - path: network.py
+  - path: subnetwork.py
+  - path: gke.py
+
+resources:
+  - type: constants.py
+    name: deployment-constants
+    properties:
+      region: &REGION us-east1
+      zone1: &ZONE1 us-east1-b
+      zone2: &ZONE2 us-east1-c
+
+  - type: network.py
+    name: simple-microservice-demo-network
+    properties:
+      autoCreateSubnetworks: false
+      subnetworks:
+        - name: simple-microservice-demo-subnetwork-1
+          region: *REGION
+          ipCidrRange: 10.128.0.0/20
+          privateIpGoogleAccess: true
+          enableFlowLogs: true
+          # TODO
+          secondaryIpRanges:
+            - rangeName: pods
+              ipCidrRange: 10.132.0.0/20
+            - rangeName: services
+              ipCidrRange: 10.138.0.0/20
+
+
+  - name: simple-microservice-demo-service-gke
+    type: gke.py
+    properties:
+      region: *REGION
+      cluster:
+        name: simple-microservice-demo-k8
+        description: simple-microservice-demo-service
+        nodePools:
+          - name: default
+            initialNodeCount: 1
+            autoscaling:
+              enabled: True
+              minNodeCount: 1
+              maxNodeCount: 2
+            management:
+              autoUpgrade: True
+              autoRepair: True
+            config:
+              oauthScopes:
+                - https://www.googleapis.com/auth/compute
+                - https://www.googleapis.com/auth/devstorage.read_only
+                - https://www.googleapis.com/auth/logging.write
+                - https://www.googleapis.com/auth/monitoring
+        loggingService: logging.googleapis.com/kubernetes
+        monitoringService: monitoring.googleapis.com/kubernetes
+        network: simple-microservice-demo-network
+        subnetwork: simple-microservice-demo-subnetwork-1
+        privateClusterConfig:
+          enablePrivateNodes: True
+          masterIpv4CidrBlock: 172.16.0.0/28 
+        ipAllocationPolicy:
+          useIpAliases: True
+          # Bug: Attempting to use above secondry networks
+          servicesIpv4CidrBlock: /16
+          clusterIpv4CidrBlock: /16
+        locations:
+          - *ZONE1
+          - *ZONE2
+    metadata:
+      dependsOn:
+        - simple-microservice-demo-subnetwork-1
+
