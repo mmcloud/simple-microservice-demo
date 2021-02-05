@@ -30,3 +30,5 @@ A simple microservice demo hosted on gcp.
     ```bash
     gcloud deployment-manager deployments update simple-ms-deployment --config gcp-manifests/deployment.yaml --preview
     ```
+
+4. Deploy code

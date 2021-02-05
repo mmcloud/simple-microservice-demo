@@ -1,0 +1,14 @@
+apiVersion: skaffold/v1beta2
+kind: Config
+build:
+  artifacts:
+  - image: helloservice
+    context: src/helloservice
+  tagPolicy:
+    gitCommit: {}
+  local:
+    useBuildkit: false
+deploy:
+  kubectl:
+    manifests:
+    - ./kubernetes-manifests/**.yaml
