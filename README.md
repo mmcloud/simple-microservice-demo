@@ -27,8 +27,21 @@ A simple microservice demo hosted on gcp.
     ```
 
 3. create the infrastructure
+
     ```bash
     gcloud deployment-manager deployments update simple-ms-deployment --config gcp-manifests/deployment.yaml --preview
     ```
 
-4. Deploy code
+## Local Cluster Development
+
+1. Launch Minikube
+
+    ```bash
+    skaffold dev
+    ```
+
+2. expose front end
+
+    ```bash
+    minikube service frontend-external
+    ```
