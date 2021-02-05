@@ -1,6 +1,7 @@
 ---
 imports:
   - path: constants.py
+  - path: services.jinja
   - path: network.py
   - path: subnetwork.py
   - path: gke.py
@@ -13,6 +14,23 @@ resources:
       zone1: &ZONE1 us-east1-b
       zone2: &ZONE2 us-east1-c
 
+  # Enable APIS for deployment
+  - name: container
+    type: services.jinja
+
+  - name: compute
+    type: services.jinja
+
+  - name: monitoring
+    type: services.jinja
+
+  - name: cloudtrace
+    type: services.jinja
+
+  - name: clouddebugger
+    type: services.jinja
+
+
   - type: network.py
     name: simple-microservice-demo-network
     properties:
@@ -23,13 +41,14 @@ resources:
           ipCidrRange: 10.128.0.0/20
           privateIpGoogleAccess: true
           enableFlowLogs: true
-          # TODO
           secondaryIpRanges:
             - rangeName: pods
-              ipCidrRange: 10.132.0.0/20
+              ipCidrRange: 10.132.0.0/16
             - rangeName: services
-              ipCidrRange: 10.138.0.0/20
-
+              ipCidrRange: 10.138.0.0/16
+    metadata:
+      dependsOn:
+        - compute
 
   - name: simple-microservice-demo-service-gke
     type: gke.py
@@ -37,7 +56,7 @@ resources:
       region: *REGION
       cluster:
         name: simple-microservice-demo-k8
-        description: simple-microservice-demo-service
+        description: a private cluster for the simple ms demo
         nodePools:
           - name: default
             initialNodeCount: 1
@@ -57,7 +76,7 @@ resources:
         loggingService: logging.googleapis.com/kubernetes
         monitoringService: monitoring.googleapis.com/kubernetes
         network: simple-microservice-demo-network
-        subnetwork: simple-microservice-demo-subnetwork-1
+        subnetwork: simple-microservice-demo-subnetwork-1 
         privateClusterConfig:
           enablePrivateNodes: True
           masterIpv4CidrBlock: 172.16.0.0/28 
@@ -71,5 +90,9 @@ resources:
           - *ZONE2
     metadata:
       dependsOn:
-        - simple-microservice-demo-subnetwork-1
-
+        - subnetwork-1
+        - container
+        - compute
+        - monitoring
+        - clouddebugger
+        - cloudtrace
