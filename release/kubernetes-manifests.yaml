@@ -18,7 +18,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: gcr.io/simple-ms-demo/simple-microservice-demo/helloservice:v0.1.0
+        image: gcr.io/simple-ms-demo/simple-microservice-demo/helloservice:v0.2.0
         ports:
         - containerPort: 8080
         readinessProbe:
@@ -58,4 +58,216 @@ spec:
   - name: grpc
     port: 8080
     targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: server
+          image: gcr.io/simple-ms-demo/simple-microservice-demo/frontend:v0.2.0
+          ports:
+          - containerPort: 8080
+          readinessProbe:
+            initialDelaySeconds: 10
+            httpGet:
+              path: "/health"
+              port: 8080
+
+          livenessProbe:
+            initialDelaySeconds: 10
+            httpGet:
+              path: "/health"
+              port: 8080
+
+          env:
+          - name: PORT
+            value: "8080"
+          - name: HELLO_SERVICE_ADDR
+            value: "helloservice:8080"
+          - name: DISABLE_TRACING
+            value: "1"
+          - name: DISABLE_PROFILER
+            value: "1"
+          - name: JAEGER_SERVICE_ADDR
+            value: "jaeger-collector:14268"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-external
+spec:
+  type: LoadBalancer
+  selector:
+    app: frontend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapiservice-deployment
+  labels:
+    app: fastapiservice
+spec:
+  replicas: 3
+  minReadySeconds: 10
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: fastapiservice
+  template:
+    metadata:
+      name: fastapiservice-deployment
+      labels:
+        app: fastapiservice
+        environment: development
+    spec:
+      containers:
+        - name: fastapiservice-app          
+          image: fastapiservices
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /api/fastapiservice/v1/openapi.json
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/fastapiservice/v1/health
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          # The following environment variables will contain the database host,
+          # user and password to connect to the PostgreSQL instance.
+          env:
+            - name: POSTGRES_SERVER
+              value: 127.0.0.1:5432
+            - name: POSTGRES_DB
+              value: fastapi
+            - name: PROJECT_NAME
+              value: fastapiservices-api
+            # [START cloudsql_secrets]
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql-db-credentials
+                  key: password
+            # [END cloudsql_secrets]
+            - name: DOMAIN
+              value: dev-app.matthewmcleod.com
+            # [START multiple_quotation_secrets]
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fastapiservices-secrets
+                  key: secret_key
+            - name: FIRST_SUPERUSER
+              valueFrom:
+                secretKeyRef:
+                  name: fastapiservices-secrets
+                  key: first_superuser
+            - name: FIRST_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fastapiservices-secrets
+                  key: first_superuser_password
+        # The format is
+        # $PROJECT:$REGION:$INSTANCE
+        # [START proxy_container]
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.11
+          command: ["/cloud_sql_proxy",
+                    "-instances=simple-ms-demo:us-east1:simple-ms-demo-postgres=tcp:5432",
+                    "-credential_file=/secrets/cloudsql/credentials.json"]
+          # [START cloudsql_security_context]
+          resources:
+            limits:
+              cpu: "250m"
+              memory: "64Mi"
+            requests:
+              cpu: "250m"
+              memory: "64Mi"
+          securityContext:
+            runAsUser: 2  # non-root user
+            allowPrivilegeEscalation: false
+          # [END cloudsql_security_context]
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql
+              readOnly: true
+        # [END proxy_container]
+      # [START volumes]
+      volumes:
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
+      # [END volumes]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapiservice-service
+
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+      app: fastapiservice
+      environment: development
+---
 ---
