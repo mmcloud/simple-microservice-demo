@@ -4,6 +4,8 @@ build:
   artifacts:
   - image: helloservice
     context: src/helloservice
+  - image: frontend
+    context: src/frontend
   tagPolicy:
     gitCommit: {}
   local:
@@ -11,4 +13,6 @@ build:
 deploy:
   kubectl:
     manifests:
-    - ./kubernetes-manifests/**.yaml
+    - ./kubernetes-manifests/helloservice.yaml
+    - ./kubernetes-manifests/frontend.yaml
+

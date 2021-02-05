@@ -136,3 +136,12 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+
+.vscode
+.mypy_cache
+docker-stack.yml
+
+secrets/
+
+*.env
