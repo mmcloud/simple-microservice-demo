@@ -1,5 +1,5 @@
 syntax = "proto3";
-package leaplending;
+package simple-microservice;
 
 
 // The greeting service definition
