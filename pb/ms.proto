@@ -1,5 +1,5 @@
 syntax = "proto3";
-package simple-microservice;
+package microservice;
 
 
 // The greeting service definition
