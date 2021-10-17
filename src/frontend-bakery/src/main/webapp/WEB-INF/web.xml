@@ -2,12 +2,11 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http:/java.sun.com/dtd/web-app_2_3.dtd">
   <servlet>
-    <servlet-name>HelloWorldServlet</servlet-name>
-    <servlet-class>com.github.mhilker.example.HelloWorldServlet</servlet-class>
+    <servlet-name>FrontendBakeryServlet</servlet-name>
+    <servlet-class>com.bakery.FrontendBakeryServlet</servlet-class>
   </servlet>
-
   <servlet-mapping>
-    <servlet-name>HelloWorldServlet</servlet-name>
+    <servlet-name>FrontendBakeryServlet</servlet-name>
     <url-pattern>/</url-pattern>
   </servlet-mapping>
 </web-app>
