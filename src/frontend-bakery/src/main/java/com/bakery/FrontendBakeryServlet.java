@@ -20,12 +20,12 @@ public class FrontendBakeryServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
+        @Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		PrintWriter writer = response.getWriter();
-
-		writer.println("Hello World this is the bakery serverlet");
-		writer.close();
+            try (PrintWriter writer = response.getWriter()) {
+                writer.println("Bakery");
+            }
 	}
 
 }
