@@ -1,0 +1,16 @@
+apply plugin: 'java'
+apply plugin: 'war'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+       providedCompile 'org.apache.tomcat:tomcat-servlet-api:8.5.15'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': ''
+    }
+}

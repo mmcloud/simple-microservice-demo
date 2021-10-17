@@ -2,10 +2,12 @@ apiVersion: skaffold/v1beta2
 kind: Config
 build:
   artifacts:
-  - image: helloservice
-    context: src/helloservice
-  - image: frontend
-    context: src/frontend
+    - image: helloservice
+      context: src/helloservice
+    - image: frontend
+      context: src/frontend
+    - image: frontend-bakery
+      context: src/frontend-bakery
   tagPolicy:
     gitCommit: {}
   local:
@@ -13,6 +15,6 @@ build:
 deploy:
   kubectl:
     manifests:
-    - ./kubernetes-manifests/helloservice.yaml
-    - ./kubernetes-manifests/frontend.yaml
-
+      - ./kubernetes-manifests/helloservice.yaml
+      - ./kubernetes-manifests/frontend.yaml
+      - ./kubernetes-manifests/frontend-bakery.yaml
